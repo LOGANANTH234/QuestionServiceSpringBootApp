@@ -2,6 +2,8 @@ package com.loga.QuestionService.Entity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 
 @AllArgsConstructor
@@ -22,6 +24,7 @@ public class onlyQuestion {
         this.option4 = option4;
 
     }
+
 
 
 }

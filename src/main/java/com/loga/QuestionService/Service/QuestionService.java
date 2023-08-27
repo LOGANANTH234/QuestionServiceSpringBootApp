@@ -1,4 +1,5 @@
 package com.loga.QuestionService.Service;
+
 import com.loga.QuestionService.Entity.Questions;
 import com.loga.QuestionService.Entity.onlyAnswer;
 import com.loga.QuestionService.Entity.onlyQuestion;
@@ -10,13 +11,20 @@ import org.springframework.data.mongodb.core.aggregation.MatchOperation;
 import org.springframework.data.mongodb.core.aggregation.SampleOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
-import java.util.*;
+import org.springframework.web.bind.annotation.RequestBody;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 
 @Service
 public class QuestionService {
-   List<Integer> integerList;
+
+    int i;
     @Autowired
   private MongoTemplate mongoTemplate;
     @Autowired
@@ -44,13 +52,7 @@ public class QuestionService {
         return questionRepository.save(questions);
     }
 
-    public List<onlyQuestion> getQuestionsList(List<Integer> integerList) {
-      return    integerList.stream().filter(a->findByID(a).isPresent()).map(a->{return  new onlyQuestion(findByID(a).get().getQuestion(),findByID(a).get().getOption1(),findByID(a).get().getOption2(),findByID(a).get().getOption3(),findByID(a).get().getOption4());
-      }).collect(Collectors.toList());
-    }
-    public List<onlyAnswer> getAnswerList(  ) {
-        return    integerList.stream().filter(a->findByID(a).isPresent()).map(a->new onlyAnswer(findByID(a).get().getExplanation(),findByID(a).get().getAnswer())).collect(Collectors.toList());
-    }
+
 
     public List<onlyQuestion> createQuestionsForQuiz(String quizName, Integer noOfQuestions, String topic) {
         MatchOperation matchOperation = Aggregation.match(Criteria.where("topic").is(topic));
@@ -58,16 +60,40 @@ public class QuestionService {
         Aggregation questionAggregation = Aggregation.newAggregation(matchOperation, sampleOperation);
         List<Questions> questionsList = mongoTemplate.aggregateStream(questionAggregation, "Questions", Questions.class).toList();
         if (!questionsList.isEmpty()) {
-          return  getQuestionsList(integerList(questionsList));
+            List<String>anwer= new ArrayList<>();
+            List<String> explanation= new ArrayList<>();
+  List<onlyQuestion> onlyQuestionList= questionsList.stream().map(questions -> { explanation.add(questions.getExplanation());anwer.add(questions.getAnswer());
+    return   new  onlyQuestion(questions.getQuestion(),questions.getOption1(),questions.getOption2(),questions.getOption3(),questions.getOption4());}).toList();
+  mongoTemplate.save(new onlyAnswer(quizName,anwer,explanation));
+  return onlyQuestionList;
         }
         return null;
     }
 
-    public List<Integer> integerList(List<Questions> questionsList){
-        integerList=questionsList.stream().map(Questions::getId).collect(Collectors.toList());
-return integerList;
+
+
+//
+    public Long getMarksForQuiz(String id,List<String> answerList) {
+       onlyAnswer onlyanswer= mongoTemplate.findById(id, onlyAnswer.class);
+
+        if(onlyanswer !=null){
+        Long mark= answerList.stream().filter(a->a.equals(onlyanswer.getAnswer().get(i++))).count();
+        i=0;
+        return mark;
+        }
+
+return null;
+
+    }
+    public Long getMarksForQuiz(String id) {
+
+        return 0L;
 
     }
 
+    public onlyAnswer getAnswerForQuiz(String id) {
 
+  return mongoTemplate.findById(id, onlyAnswer.class);
+
+    }
 }
